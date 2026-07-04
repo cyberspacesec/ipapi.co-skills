@@ -24,47 +24,61 @@ export default withMermaid(defineConfig({
     // 站点 logo 与标题
     logo: '/favicon.svg',
 
-    // 顶部导航
+    // 顶部导航（精简为 6 个一级项，避免详情页导航栏挤占换行）
     nav: [
       { text: '🖥 CLI', link: '/cli/', activeMatch: '/cli/' },
-      { text: '⚡ 快速开始', link: '/cli/quickstart', activeMatch: '/cli/quickstart' },
-      { text: '📖 库指南', link: '/guide/intro', activeMatch: '/guide/' },
-      { text: '🎓 教程', link: '/tutorials/', activeMatch: '/tutorials/' },
+      {
+        text: '📖 指南',
+        link: '/guide/intro',
+        activeMatch: '/guide/',
+        items: [
+          { text: '库开发指南', link: '/guide/intro' },
+          { text: '核心概念', link: '/guide/client-concept' },
+          { text: '快速开始', link: '/guide/getting-started' },
+          { text: '安装', link: '/guide/installation' },
+          { text: '工作原理', link: '/guide/how-it-works' }
+        ]
+      },
       {
         text: '📚 API 参考',
+        activeMatch: '/api/',
         items: [
           { text: 'Client 客户端', link: '/api/client' },
           { text: 'API 方法', link: '/api/methods' },
           { text: '数据模型', link: '/api/models' },
           { text: '错误类型', link: '/api/errors' },
-          { text: '选项函数', link: '/api/options' }
-        ]
-      },
-      { text: '🧪 示例', link: '/examples/basic-usage', activeMatch: '/examples/' },
-      {
-        text: '🍳 实战',
-        items: [
-          { text: 'Cookbook 食谱', link: '/cookbook/' },
-          { text: '最佳实践', link: '/best-practices/' },
-          { text: 'FAQ', link: '/faq/' }
+          { text: '选项函数', link: '/api/options' },
+          { text: '包总览', link: '/api/' }
         ]
       },
       {
-        text: '📚 深度参考',
+        text: '🧪 示例与实战',
+        activeMatch: '/(examples|cookbook|best-practices|tutorials)/',
         items: [
-          { text: '错误详解', link: '/reference/errors/err-invalid-ip' },
-          { text: '字段详解', link: '/reference/fields/ip' },
-          { text: '常量与内部', link: '/reference/internal/format-json' },
-          { text: '参考总览', link: '/reference/' }
+          { text: '🧪 示例代码', link: '/examples/basic-usage' },
+          { text: '🎓 教程', link: '/tutorials/' },
+          { text: '🍳 Cookbook 食谱', link: '/cookbook/' },
+          { text: '✅ 最佳实践', link: '/best-practices/' }
         ]
       },
-      { text: '⚙️ 配置', link: '/config/cicd', activeMatch: '/config/' },
+      {
+        text: '❓ FAQ 与参考',
+        activeMatch: '/(faq|reference|config)/',
+        items: [
+          { text: '❓ 常见问题', link: '/faq/' },
+          { text: '📚 深度参考总览', link: '/reference/' },
+          { text: '🛡 错误详解', link: '/reference/errors/err-invalid-ip' },
+          { text: '🗂 字段详解', link: '/reference/fields/ip' },
+          { text: '⚙️ CI/CD 与部署', link: '/config/cicd' }
+        ]
+      },
       {
         text: '🔗 资源',
         items: [
           { text: 'GitHub 仓库', link: 'https://github.com/cyberspacesec/ipapi.co-skills' },
           { text: 'ipapi.co 官网', link: 'https://ipapi.co' },
-          { text: 'Go 文档', link: 'https://pkg.go.dev/github.com/cyberspacesec/ipapi.co-skills' }
+          { text: 'Go 文档', link: 'https://pkg.go.dev/github.com/cyberspacesec/ipapi.co-skills' },
+          { text: 'Releases', link: 'https://github.com/cyberspacesec/ipapi.co-skills/releases' }
         ]
       }
     ],
