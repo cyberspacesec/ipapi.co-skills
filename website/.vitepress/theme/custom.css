@@ -1,0 +1,72 @@
+/* .vitepress/theme/custom.css
+ * Custom styles for ipapi.co-skills docs.
+ *
+ * Problem: VitePress nav bar may clip/hide overflowing menu items.
+ * Solution: Flex-wrap on nav, and ensure dropdowns are visible.
+ */
+
+/* Make the nav bar flex-wrap instead of hiding overflow */
+.VPNav {
+  overflow: visible;
+}
+
+.VPNavBar {
+  overflow: visible;
+}
+
+.VPNavBar .VPNavBarMenu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  overflow: visible;
+}
+
+/* Ensure menu items don't get clipped */
+.VPNavBarMenuLink,
+.VPNavBarMenuGroup {
+  flex-shrink: 0;
+}
+
+/* Dropdown menus should overlay, not clip */
+.VPNavBarMenuGroup .VPNavBarMenuGroupItem {
+  overflow: visible;
+}
+
+.VPNavBarMenuGroup .items {
+  overflow: visible;
+}
+
+/* Ensure the title bar doesn't shrink menu space */
+.VPNavBarTitle {
+  flex-shrink: 0;
+}
+
+/* Mobile hamburger should still work */
+.VPNavBarHamburger {
+  display: none; /* desktop: hidden, VitePress handles mobile breakpoint */
+}
+
+/* When screen is narrow, allow menu to wrap gracefully */
+@media (max-width: 1280px) {
+  .VPNavBar .VPNavBarMenu {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+}
+
+/* Make sure dropdowns don't get hidden by nav height */
+.VPNavBarMenuGroup {
+  position: relative;
+}
+
+.VPNavBarMenuGroup .items {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+}
+
+/* Social links section shouldn't shrink */
+.VPNavBar .VPNavBarSocialLinks {
+  flex-shrink: 0;
+}

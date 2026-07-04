@@ -20,6 +20,11 @@
 # Task runner
 # Temporary files
 # Test binary, built with `go test -c`
+# CLI / example build outputs (no extension, in repo root)
+/advanced_usage
+/basic_usage
+/error_handling
+/ipapi
 *.crt
 *.db
 *.dll
@@ -76,3 +81,8 @@ secrets.yml
 templates-custom/
 tmp/
 vendor/
+
+# Website (VitePress)
+website/node_modules/
+website/.vitepress/cache/
+website/.vitepress/dist/

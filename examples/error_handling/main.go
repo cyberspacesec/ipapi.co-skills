@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/cyberspacesec/go-ipapi.co/pkg/ipapi"
+	"github.com/cyberspacesec/ipapi.co-skills/pkg/ipapi"
 	"log"
 )
 

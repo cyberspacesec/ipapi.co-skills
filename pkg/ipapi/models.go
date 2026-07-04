@@ -10,18 +10,20 @@ import (
 
 type IPInfo struct {
 	IP                 string    `json:"ip"`
+	Network            string    `json:"network"`
 	Version            string    `json:"version"`
 	City               string    `json:"city"`
 	Region             string    `json:"region"`
 	RegionCode         string    `json:"region_code"`
 	Country            string    `json:"country"`
 	CountryName        string    `json:"country_name"`
+	CountryCode        string    `json:"country_code"`
 	CountryCodeISO3    string    `json:"country_code_iso3"`
 	CountryCapital     string    `json:"country_capital"`
 	CountryTLD         string    `json:"country_tld"`
 	ContinentCode      string    `json:"continent_code"`
 	InEU               bool      `json:"in_eu"`
-	Postal             string    `json:"postal"`
+	Postal             *string   `json:"postal"`
 	Latitude           float64   `json:"latitude"`
 	Longitude          float64   `json:"longitude"`
 	LatLong            string    `json:"latlong"`
@@ -44,10 +46,15 @@ type APIError struct {
 	Reason   string `json:"reason"`
 	Message  string `json:"message"`
 	IP       string `json:"ip"`
+	Reserved bool   `json:"reserved"`
+	Version  string `json:"version"`
 }
 
 // 实现error接口
 func (e *APIError) Error() string {
+	if e.Reserved {
+		return fmt.Sprintf("ipapi error: %s (reason: %s, ip: %s, reserved: %v)", e.Message, e.Reason, e.IP, e.Reserved)
+	}
 	return fmt.Sprintf("ipapi error: %s (reason: %s)", e.Message, e.Reason)
 }
 
@@ -71,6 +78,14 @@ func (info *IPInfo) ParseLatLong() (float64, float64, error) {
 		return 0, 0, err
 	}
 	return lat, lon, nil
+}
+
+// GetPostal returns the postal code as a string, or empty string if nil
+func (info *IPInfo) GetPostal() string {
+	if info.Postal == nil {
+		return ""
+	}
+	return *info.Postal
 }
 
 func ValidateIP(ip string) error {

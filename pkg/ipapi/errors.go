@@ -20,6 +20,8 @@ func (c *Client) handleError(err error) error {
 			return fmt.Errorf("%w: %s", ErrReservedIP, apiErr.IP)
 		case "Invalid IP Address":
 			return fmt.Errorf("%w: %s", ErrInvalidIP, apiErr.IP)
+		case "Invalid Key":
+			return fmt.Errorf("%w: %s", ErrInvalidKey, apiErr.Message)
 		}
 	}
 

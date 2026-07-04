@@ -1,29 +1,113 @@
-# go-ipapi.co
+# ipapi.co-skills
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/cyberspacesec/go-ipapi.co.svg)](https://pkg.go.dev/github.com/cyberspacesec/go-ipapi.co)
-[![GitHub License](https://img.shields.io/github/license/cyberspacesec/go-ipapi.co)](https://github.com/cyberspacesec/go-ipapi.co/blob/main/LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cyberspacesec/go-ipapi.co)](https://goreportcard.com/report/github.com/cyberspacesec/go-ipapi.co)
+[![CLI Release](https://img.shields.io/github/v/release/cyberspacesec/ipapi.co-skills)](https://github.com/cyberspacesec/ipapi.co-skills/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/cyberspacesec/ipapi.co-skills.svg)](https://pkg.go.dev/github.com/cyberspacesec/ipapi.co-skills)
+[![CI](https://github.com/cyberspacesec/ipapi.co-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/cyberspacesec/ipapi.co-skills/actions/workflows/ci.yml)
+[![GitHub License](https://img.shields.io/github/license/cyberspacesec/ipapi.co-skills)](https://github.com/cyberspacesec/ipapi.co-skills/blob/main/LICENSE)
+[![Docs](https://img.shields.io/badge/docs-vitepress-3c8c4a)](https://cyberspacesec.github.io/ipapi.co-skills/)
 
-Go客户端库用于[ipapi.co](https://ipapi.co/api/#introduction)的IP地理位置查询API，支持IPv4/IPv6查询、字段级数据获取和高级错误处理。
+**A command-line IP geolocation tool** that wraps the [ipapi.co](https://ipapi.co) API. Default JSON output, stable exit codes, AI-Agent friendly — backed by a zero-dependency Go SDK.
 
-## 功能特性
+📖 **Full documentation**: [https://cyberspacesec.github.io/ipapi.co-skills/](https://cyberspacesec.github.io/ipapi.co-skills/) · 📄 **中文版**: [README_CN.md](./README_CN.md)
 
-- ✅ 完整IP信息查询（JSON/XML/CSV/YAML）
-- 🎯 单个字段查询（国家/城市/时区等）
-- 🌍 客户端IP自动检测
-- 🔒 支持HTTPS和API密钥认证
-- 🔄 自动重试和速率限制处理
-- 🛠 可定制HTTP客户端和上下文支持
-- 📡 支持IPv4和IPv6地址
-- 🧪 完整单元测试覆盖
+## ✨ Why use it
 
-## 安装
+- 🤖 **Agent friendly**: default JSON envelope `{ok, command, data, meta}`, errors identified by stable `code` + exit code — Agents can call it without reading docs
+- 🚪 **Stable exit codes**: `0` success, `3-12` map to 10 business error categories, `6/8/9` mark retryable errors
+- 🎯 **Field-level queries**: `ipapi field 8.8.8.8 country` fetches a single field in one line; `--human` outputs a plain value for easy piping
+- 📡 **Multiple formats**: JSON / JSONP / XML / CSV / YAML; `raw` command returns original bytes
+- 🧭 **Self-describing**: `ipapi fields` lists all 28 queryable fields, grouped
+- 🧩 **Also a Go SDK**: the CLI is just a thin shell; `pkg/ipapi` is a zero-runtime-dependency Go library you can embed directly
+
+## 📥 Installation
 
 ```bash
-go get github.com/cyberspacesec/go-ipapi.co
+go install github.com/cyberspacesec/ipapi.co-skills/cmd/ipapi@latest
 ```
 
-## 快速开始
+Or download a precompiled binary from [Releases](https://github.com/cyberspacesec/ipapi.co-skills/releases).
+
+## ⚡ 30-second quickstart
+
+```bash
+ipapi 8.8.8.8                    # Query a specific IP (default JSON envelope)
+ipapi 8.8.8.8 -H                 # Human-readable table
+ipapi field 8.8.8.8 country      # Fetch a single field
+ipapi field 8.8.8.8 country -H   # Plain value output, easy to pipe
+ipapi me                          # Look up this machine's public IP
+ipapi fields                      # List all queryable fields
+ipapi raw 8.8.8.8 -f yaml         # Raw YAML response
+```
+
+JSON output example:
+
+```json
+{
+  "ok": true,
+  "command": "info",
+  "args": {"ip": "8.8.8.8", "format": "json"},
+  "data": {
+    "ip": "8.8.8.8",
+    "city": "Mountain View",
+    "country_name": "United States",
+    "country_code": "US",
+    "latitude": 37.42301,
+    "longitude": -122.083352,
+    "timezone": "America/Los_Angeles",
+    "asn": "AS15169",
+    "org": "Google LLC"
+  },
+  "meta": {"format": "json", "durationMs": 312, "retrievedAt": "2026-07-04T10:01:22Z"}
+}
+```
+
+On errors the exit code distinguishes categories, making Agent branching easy:
+
+```bash
+ipapi info 999.1.1.1; echo "exit=$?"   # exit=3 (INVALID_IP)
+```
+
+## 🤖 AI Agent integration
+
+The Agent calling pattern: first `ipapi fields` to discover queryable fields, then `ipapi info/field` to query, and rely on the exit code plus `error.code` to interpret results. See [SKILLS.md](./SKILLS.md) and the [Agent integration guide](https://cyberspacesec.github.io/ipapi.co-skills/cli/agent).
+
+```bash
+# Extract the country name
+ipapi info 8.8.8.8 | jq -r '.data.country_name'
+
+# Error handling
+if ! ipapi info "$IP" > /tmp/info.json 2>/tmp/err.json; then
+  code=$(jq -r '.error.code' /tmp/err.json)
+  case "$code" in
+    RATE_LIMITED) sleep 60 && retry ;;
+    INVALID_IP)   echo "bad ip" ;;
+  esac
+fi
+```
+
+## 📋 Command overview
+
+| Command | Description |
+|---|---|
+| `ipapi info <ip>` | Full info for a given IP |
+| `ipapi me` | Full info for this machine's public IP |
+| `ipapi field <ip> <field>` | A single field for a given IP |
+| `ipapi me-field <field>` | A single field for this machine's IP |
+| `ipapi raw <ip> -f <fmt>` | Raw format (xml/csv/yaml/jsonp) for a given IP |
+| `ipapi me-raw -f <fmt>` | Raw format for this machine's IP |
+| `ipapi fields` | List all queryable fields (local, no network) |
+| `ipapi version` | Version info |
+| `ipapi completion <shell>` | Generate shell completions |
+
+Global flags: `--api-key`, `--api-key-mode`, `-f/--format`, `--base-url`, `--retries`, `--timeout`, `-H/--human`, `--config`, `--callback`. Config priority: flag > env var > `~/.ipapi.json` > defaults.
+
+## 🧩 Using it as a Go SDK
+
+The CLI is a thin shell over `pkg/ipapi`. To embed it in a Go program:
+
+```bash
+go get github.com/cyberspacesec/ipapi.co-skills
+```
 
 ```go
 package main
@@ -31,7 +115,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/cyberspacesec/go-ipapi.co/pkg/ipapi"
+	"github.com/cyberspacesec/ipapi.co-skills/pkg/ipapi"
 	"time"
 )
 
@@ -40,100 +124,40 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// 获取当前IP信息
-	info, _ := client.GetClientIPInfo(ctx, "json")
-	fmt.Printf("Location: %s, %s\nTimezone: %s\n",
-		info.City, info.CountryName, info.Timezone)
-
-	// 查询特定IP的ASN
-	asn, _ := client.GetField(ctx, "8.8.8.8", "asn")
-	fmt.Println("Google DNS ASN:", asn)
+	info, _ := client.GetIPInfo(ctx, "8.8.8.8", string(ipapi.FormatJSON))
+	fmt.Printf("Location: %s, %s\n", info.City, info.CountryName)
 }
 ```
 
-## 高级用法
+SDK features: 10 functional options (`WithAPIKey` / `WithCustomHTTPClient` / `WithErrorHandler` / `WithCallback` / `WithBaseURL` / `WithUserAgent` / `WithRetries` / `WithTimeout` / `WithRateLimiter`, etc.), 5 response formats, 10 sentinel errors (`errors.Is` matching), automatic retry and rate limiting, full IPv4/IPv6 support, 100% test coverage.
 
-### 自定义配置客户端
+- 📖 [Library guide](https://cyberspacesec.github.io/ipapi.co-skills/guide/intro)
+- 📚 [API reference](https://cyberspacesec.github.io/ipapi.co-skills/api/methods)
+- 🐙 [Go docs](https://pkg.go.dev/github.com/cyberspacesec/ipapi.co-skills)
 
-```go
-client := ipapi.NewClient(
-    ipapi.WithAPIKey("your_api_key"),
-    ipapi.WithCustomHTTPClient(&http.Client{
-        Timeout: 30 * time.Second,
-    }),
-    ipapi.WithErrorHandler(func(err error) error {
-        log.Printf("API Error: %v", err)
-        return err
-    }),
-)
+## 🏗 Build
+
+```bash
+# CLI
+go build ./cmd/ipapi/
+
+# Tests
+go test ./...
 ```
 
-### 批量查询处理
+Cross-platform binary releases are automated by GitHub Actions + GoReleaser (triggered by pushing a `v*` tag).
 
-```go
-func batchLookup(ips []string) {
-    for _, ip := range ips {
-        info, err := client.GetIPInfo(context.Background(), ip, "json")
-        if err != nil {
-            continue
-        }
-        fmt.Printf("%s | %s | %s\n", 
-            info.IP, info.CountryCode, info.ASN)
-    }
-}
-```
+## 🤝 Contributing
 
-## 错误处理
+Issues and PRs are welcome. Please ensure:
+- Code follows Go conventions and passes `go vet`
+- New features include tests
+- Documentation stays in sync
 
-### 错误类型检查
+## 📄 License
 
-```go
-info, err := client.GetIPInfo(ctx, "invalid.ip", "json")
-if err != nil {
-    switch {
-    case errors.Is(err, ipapi.ErrInvalidIP):
-        fmt.Println("无效IP地址")
-    case errors.Is(err, ipapi.ErrRateLimited):
-        time.Sleep(1 * time.Minute) // 等待重试
-    default:
-        log.Fatal(err)
-    }
-}
-```
-
-### 自定义错误处理
-
-```go
-client := ipapi.NewClient(
-    ipapi.WithErrorHandler(func(err error) error {
-        if apiErr, ok := err.(*ipapi.APIError); ok {
-            metrics.LogError(apiErr.Reason)
-        }
-        return err
-    }),
-)
-```
-
-## 贡献指南
-
-欢迎通过以下方式参与贡献：
-1. 提交Issue报告问题
-2. Fork仓库并提交Pull Request
-3. 完善测试用例和文档
-4. 分享使用案例
-
-请确保：
-- 代码符合Go语言规范
-- 新增功能包含测试用例
-- 文档保持同步更新
-
-## 许可证
-
-本项目基于 MIT 许可证发布，详见 [LICENSE](LICENSE) 文件。
+MIT, see [LICENSE](LICENSE).
 
 ---
 
-> 📌 注意：使用API需遵守ipapi.co的服务条款，生产环境建议申请API密钥。
-
-
-
+> 📌 Use of the API is subject to ipapi.co's terms of service; for production, applying for an API Key is recommended.
