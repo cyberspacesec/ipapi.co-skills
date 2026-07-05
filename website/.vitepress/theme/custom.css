@@ -79,12 +79,18 @@
 }
 
 /*
- * Mobile / narrow breakpoints: let VitePress handle the collapse to hamburger.
- * Hide the inline menu on narrow screens so it never overflows — the hamburger
- * button (already shown by VitePress at its breakpoint) takes over.
+ * Narrow screens: hide the inline menu so it never overflows, and show the
+ * hamburger button so navigation is still reachable. 1200px is chosen because
+ * the 6 top-level items (one of them a 5-item "API 参考" dropdown) fit
+ * comfortably at 1280px+ with ~130px gap, but start to overflow below ~1180px.
+ * VitePress shows the hamburger at 768px by default, so we force it earlier
+ * (≥768 and <1200) to cover the 768–1200px range where the row would overflow.
  */
-@media (max-width: 960px) {
+@media (max-width: 1200px) {
   .VPNavBar .VPNavBarMenu {
     display: none;
+  }
+  .VPNavBar .VPNavBarHamburger {
+    display: flex !important;
   }
 }
