@@ -104,6 +104,7 @@ export default withMermaid(defineConfig({
             { text: 'field / me-field', link: '/cli/command-field' },
             { text: 'raw / me-raw', link: '/cli/command-raw' },
             { text: 'fields', link: '/cli/command-fields' },
+            { text: 'quota', link: '/cli/command-quota' },
             { text: 'version / completion', link: '/cli/command-version' }
           ]
         },
@@ -197,7 +198,8 @@ export default withMermaid(defineConfig({
             { text: 'GetField', link: '/api/get-field' },
             { text: 'GetClientIPInfo', link: '/api/get-client-ip-info' },
             { text: 'GetClientIPInfoRaw', link: '/api/get-client-ip-info-raw' },
-            { text: 'GetClientField', link: '/api/get-client-field' }
+            { text: 'GetClientField', link: '/api/get-client-field' },
+            { text: 'GetQuota', link: '/api/get-quota' }
           ]
         },
         {
@@ -382,6 +384,7 @@ export default withMermaid(defineConfig({
           collapsed: false,
           items: [
             { text: '食谱总览', link: '/cookbook/' },
+            { text: 'quota-monitoring', link: '/cookbook/quota-monitoring' },
             { text: 'geoip-middleware', link: '/cookbook/geoip-middleware' },
             { text: 'rate-limit-by-country', link: '/cookbook/rate-limit-by-country' },
             { text: 'redirect-by-language', link: '/cookbook/redirect-by-language' },

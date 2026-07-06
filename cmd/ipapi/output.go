@@ -96,6 +96,14 @@ func printHuman(w io.Writer, cmd string, data interface{}, m *meta) {
 	switch cmd {
 	case "info", "me":
 		printIPInfoHuman(w, data, m)
+	case "quota":
+		if q, ok := data.(*ipapi.Quota); ok {
+			printQuotaHuman(w, q)
+			return
+		}
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(data)
 	case "field", "me-field":
 		// data 形如 {field, value}，human 模式只打印纯值一行，便于 shell pipe
 		if fv, ok := data.(*fieldValue); ok {

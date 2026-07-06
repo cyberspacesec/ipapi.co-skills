@@ -4,6 +4,7 @@ package ipapi
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -39,6 +40,35 @@ type IPInfo struct {
 	Org                string    `json:"org"`
 	Hostname           string    `json:"hostname,omitempty"`
 	RetrievedAt        time.Time `json:"-"`
+}
+
+// Quota holds the remaining IP lookup quota for the configured API key.
+//
+// It is returned by GetQuota, which queries the (undocumented but stable)
+// GET /quota/ endpoint. The API responds with one of:
+//   - {"available": <number>}  — remaining lookups for a valid key
+//   - {"available": "API key needed"} — no API key configured on the client
+//   - {"error": true, "reason": "Invalid Key", ...} — rejected key
+//
+// Available is the raw "available" value from the response; AvailableInt is
+// the parsed integer count (only meaningful when Available == AvailableInt's
+// string form, i.e. a numeric response).
+type Quota struct {
+	Available string `json:"available"`
+}
+
+// AvailableInt returns the remaining lookup count as an integer. It returns
+// ok=false when the "available" field is not numeric (e.g. "API key needed"
+// or an error response). Use this to drive quota-monitoring logic.
+func (q Quota) AvailableInt() (n int, ok bool) {
+	if q.Available == "" {
+		return 0, false
+	}
+	i, err := strconv.Atoi(q.Available)
+	if err != nil {
+		return 0, false
+	}
+	return i, true
 }
 
 type APIError struct {

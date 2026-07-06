@@ -2257,3 +2257,117 @@ func TestClient_GetIPInfo_AllFormats(t *testing.T) {
 		})
 	}
 }
+
+// --- GetQuota ---
+
+func TestClient_GetQuota_Success(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/quota/" {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		// Bearer auth should be applied
+		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
+			t.Errorf("expected Bearer auth, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"available": "12345"}`)
+	}))
+	defer ts.Close()
+
+	client := NewClient(WithAPIKey("test-key"), WithCustomHTTPClient(ts.Client()))
+	client.BaseURL = ts.URL + "/"
+
+	q, err := client.GetQuota(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q.Available != "12345" {
+		t.Fatalf("expected available=12345, got %q", q.Available)
+	}
+	n, ok := q.AvailableInt()
+	if !ok || n != 12345 {
+		t.Fatalf("expected AvailableInt=12345,ok=true; got n=%d ok=%v", n, ok)
+	}
+}
+
+func TestClient_GetQuota_QueryAuth(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("key"); got != "test-key" {
+			t.Errorf("expected ?key=test-key, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"available": "999"}`)
+	}))
+	defer ts.Close()
+
+	client := NewClient(WithAPIKey("test-key"), WithAPIKeyQuery(), WithCustomHTTPClient(ts.Client()))
+	client.BaseURL = ts.URL + "/"
+
+	q, err := client.GetQuota(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q.Available != "999" {
+		t.Fatalf("expected available=999, got %q", q.Available)
+	}
+}
+
+func TestClient_GetQuota_NoKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"available": "API key needed"}`)
+	}))
+	defer ts.Close()
+
+	client := NewClient(WithCustomHTTPClient(ts.Client()))
+	client.BaseURL = ts.URL + "/"
+
+	q, err := client.GetQuota(context.Background())
+	if err != nil {
+		t.Fatalf("no-key response should not be an error, got %v", err)
+	}
+	if q.Available != "API key needed" {
+		t.Fatalf("expected 'API key needed', got %q", q.Available)
+	}
+	if _, ok := q.AvailableInt(); ok {
+		t.Fatal("expected AvailableInt ok=false for non-numeric available")
+	}
+}
+
+func TestClient_GetQuota_InvalidKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// /quota/ returns 200 even for rejected keys
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"error": true, "reason": "Invalid Key", "message": "Invalid key. SignUp @ https://ipapi.co/pricing/ "}`)
+	}))
+	defer ts.Close()
+
+	client := NewClient(WithAPIKey("bad"), WithCustomHTTPClient(ts.Client()))
+	client.BaseURL = ts.URL + "/"
+
+	_, err := client.GetQuota(context.Background())
+	if err == nil {
+		t.Fatal("expected error for invalid key, got nil")
+	}
+	if !errors.Is(err, ErrInvalidKey) {
+		t.Fatalf("expected ErrInvalidKey, got %v", err)
+	}
+}
+
+func TestClient_GetQuota_UnexpectedBody(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `not json`)
+	}))
+	defer ts.Close()
+
+	client := NewClient(WithCustomHTTPClient(ts.Client()))
+	client.BaseURL = ts.URL + "/"
+
+	_, err := client.GetQuota(context.Background())
+	if err == nil {
+		t.Fatal("expected error for non-json body, got nil")
+	}
+	if !errors.Is(err, ErrUnexpectedData) {
+		t.Fatalf("expected ErrUnexpectedData, got %v", err)
+	}
+}

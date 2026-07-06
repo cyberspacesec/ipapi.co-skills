@@ -302,6 +302,52 @@ func (c *Client) GetClientField(ctx context.Context, field string) (string, erro
 	return string(data), nil
 }
 
+// GetQuota returns the remaining IP-lookup quota for the configured API key.
+//
+// This queries the (undocumented but stable) GET /quota/ endpoint. Unlike the
+// lookup endpoints, /quota/ always responds with HTTP 200; the outcome is
+// encoded in the JSON body:
+//
+//   - valid key:               {"available": "12345"}   → Quota{Available:"12345"}
+//   - no key configured:        {"available": "API key needed"}
+//   - rejected key:             {"error": true, "reason": "Invalid Key", ...}
+//
+// A rejected key is decoded into an *APIError and routed through handleError,
+// so callers see ErrInvalidKey via errors.Is. "API key needed" is returned as
+// a Quota with that literal Available string (not an error), since the request
+// itself succeeded — the caller decides whether that is actionable.
+func (c *Client) GetQuota(ctx context.Context) (*Quota, error) {
+	req, err := newGetRequest(ctx, c.BaseURL, "quota")
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	c.applyAuth(req)
+	c.setHeaders(req)
+	resp, err := c.doRequest(req)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+	defer resp.Body.Close()
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	// /quota/ returns 200 even for rejected keys, so try the error envelope first.
+	var apiErr *APIError
+	if err := json.Unmarshal(raw, &apiErr); err == nil && apiErr != nil && apiErr.HasError {
+		return nil, c.handleError(apiErr)
+	}
+
+	var q Quota
+	if err := json.Unmarshal(raw, &q); err != nil {
+		return nil, c.handleError(fmt.Errorf("%w: %v", ErrUnexpectedData, err))
+	}
+	return &q, nil
+}
+
 // setHeaders sets common HTTP headers on the request.
 func (c *Client) setHeaders(req *http.Request) {
 	req.Header.Set("User-Agent", c.UserAgent)

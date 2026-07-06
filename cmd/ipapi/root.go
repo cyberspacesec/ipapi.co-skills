@@ -144,7 +144,7 @@ func init() {
 	p.String("config", "", "配置文件路径（默认 ~/.ipapi.json）")
 	p.String("callback", "", "JSONP 回调函数名（仅 --format jsonp + raw/me-raw 生效）")
 
-	rootCmd.AddCommand(infoCmd, meCmd, fieldCmd, meFieldCmd, rawCmd, meRawCmd, fieldsCmd, versionCmd)
+	rootCmd.AddCommand(infoCmd, meCmd, fieldCmd, meFieldCmd, rawCmd, meRawCmd, fieldsCmd, quotaCmd, versionCmd)
 	completionCmd := buildCompletionCmd()
 	rootCmd.AddCommand(completionCmd)
 }

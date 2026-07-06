@@ -336,3 +336,99 @@ func TestInfoEndToEndMock(t *testing.T) {
 		t.Error("OK should be true")
 	}
 }
+
+func TestQuotaEndToEndMock(t *testing.T) {
+	srv := newMockServer(t, 200, `{"available":"12345"}`)
+	defer srv.Close()
+
+	cfg := defaultConfig()
+	cfg.BaseURL = srv.URL + "/"
+	cfg.Format = "json"
+	cfg.APIKey = "test-key"
+	client := newClient(&cfg)
+	state.cfg = &cfg
+	state.client = client
+
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	err := runQuota(nil, nil)
+	w.Close()
+	os.Stdout = old
+
+	if err != nil {
+		t.Fatalf("runQuota: %v", err)
+	}
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	var env envelope
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, buf.String())
+	}
+	if !env.OK {
+		t.Fatal("OK should be true")
+	}
+	if env.Command != "quota" {
+		t.Errorf("expected command=quota, got %q", env.Command)
+	}
+	// data should be the Quota struct marshalled: {"available":"12345"}
+	raw, _ := json.Marshal(env.Data)
+	if !bytes.Contains(raw, []byte("12345")) {
+		t.Errorf("expected data to contain 12345, got %s", raw)
+	}
+}
+
+func TestQuotaEndToEndInvalidKey(t *testing.T) {
+	srv := newMockServer(t, 200, `{"error":true,"reason":"Invalid Key","message":"Invalid key. SignUp @ https://ipapi.co/pricing/ "}`)
+	defer srv.Close()
+
+	cfg := defaultConfig()
+	cfg.BaseURL = srv.URL + "/"
+	cfg.Format = "json"
+	cfg.APIKey = "bad"
+	client := newClient(&cfg)
+	state.cfg = &cfg
+	state.client = client
+
+	old := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	err := runQuota(nil, nil)
+	w.Close()
+	os.Stderr = old
+
+	if err == nil {
+		t.Fatal("expected error for invalid key")
+	}
+	ee, ok := err.(*exitError)
+	if !ok {
+		t.Fatalf("expected *exitError, got %T", err)
+	}
+	if ee.code != exitInvalidKey {
+		t.Errorf("expected exit code %d (INVALID_KEY), got %d", exitInvalidKey, ee.code)
+	}
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	var env envelope
+	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
+		t.Fatalf("invalid JSON on stderr: %v\n%s", err, buf.String())
+	}
+	if env.OK {
+		t.Fatal("OK should be false for invalid key")
+	}
+	if env.Error == nil || env.Error.Code != "INVALID_KEY" {
+		t.Errorf("expected error.code=INVALID_KEY, got %+v", env.Error)
+	}
+}
+
+func TestPrintQuotaHuman(t *testing.T) {
+	var buf bytes.Buffer
+	printQuotaHuman(&buf, &ipapi.Quota{Available: "42"})
+	out := buf.String()
+	if !bytes.Contains(buf.Bytes(), []byte("42")) {
+		t.Errorf("expected human output to contain 42, got %q", out)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("配额")) {
+		t.Errorf("expected human output to contain 配额, got %q", out)
+	}
+}

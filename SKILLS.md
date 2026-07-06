@@ -25,6 +25,7 @@ go install github.com/cyberspacesec/ipapi.co-skills/cmd/ipapi@latest
 | `ipapi raw <ip> -f <fmt>` | 查询指定 IP 的原始格式（xml/csv/yaml/jsonp） | 是 |
 | `ipapi me-raw -f <fmt>` | 查询本机 IP 的原始格式 | 是 |
 | `ipapi fields` | 列出全部可查字段（分组） | **否** |
+| `ipapi quota` | 查询当前 API key 剩余配额 | 是 |
 | `ipapi version` | 版本信息 | 否 |
 | `ipapi completion <shell>` | 生成 shell 补全 | 否 |
 

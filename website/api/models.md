@@ -293,6 +293,30 @@ func (e *APIError) ToError() error
 
 返回 `e` 自身（保留兼容性）。
 
+## Quota
+
+`GetQuota` 的返回类型，表示当前 API key 的剩余查询配额。
+
+```go
+type Quota struct {
+    Available string `json:"available"`
+}
+
+// AvailableInt 把 Available 解析为整数，非数字时 ok=false
+func (q Quota) AvailableInt() (n int, ok bool)
+```
+
+| `Available` 取值 | 含义 | `AvailableInt()` |
+|---|---|---|
+| `"12345"` | 有效 key，剩余 12345 次查询 | `12345, true` |
+| `"API key needed"` | 未配置 key | `0, false` |
+
+::: tip ⚠️ 非数字不算错误
+`"API key needed"` 不会触发 `error`——请求本身成功，只是 key 缺失。调用方用 `AvailableInt()` 的 `ok` 判断是否拿到了真实数字。
+:::
+
+详见 [GetQuota](./get-quota)。
+
 ## ValidateIP
 
 ```go

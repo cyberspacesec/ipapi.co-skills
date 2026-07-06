@@ -1,6 +1,6 @@
 # 🔧 API 方法
 
-> `pkg/ipapi/api.go` — 6 个查询方法与请求基础设施。
+> `pkg/ipapi/api.go` — 6 个查询方法 + 1 个配额方法与请求基础设施。
 
 ## 方法总览
 
@@ -12,9 +12,10 @@
 | `GetClientIPInfo(ctx, format)` | `GET /{format}/` | `*IPInfo` | [→](get-client-ip-info) |
 | `GetClientIPInfoRaw(ctx, format)` | `GET /{format}/` | `[]byte` | [→](get-client-ip-info-raw) |
 | `GetClientField(ctx, field)` | `GET /{field}/` | `string` | [→](get-client-field) |
+| `GetQuota(ctx)` | `GET /quota/` | `*Quota` | [→](get-quota) |
 
 ::: tip 🎨 一图抵千言
-6 个方法按「目标 IP」与「返回类型」两个维度划分：左半边查指定 IP，右半边查调用方 IP；每半边的三个方法分别返回结构化、原始字节、单字段。
+6 个查询方法按「目标 IP」与「返回类型」两个维度划分：左半边查指定 IP，右半边查调用方 IP；每半边的三个方法分别返回结构化、原始字节、单字段。`GetQuota` 独立成线，查询 API key 剩余配额。
 :::
 
 ```mermaid
@@ -26,8 +27,9 @@ classDiagram
         +GetClientIPInfo(ctx, format) *IPInfo
         +GetClientIPInfoRaw(ctx, format) []byte
         +GetClientField(ctx, field) string
+        +GetQuota(ctx) *Quota
     }
-    note for Client "端点映射\n指定IP: /{ip}/{format|field}/\n调用方IP: /{format|field}/"
+    note for Client "端点映射\n指定IP: /{ip}/{format|field}/\n调用方IP: /{format|field}/\n配额: /quota/"
     class IPInfo {
         28 个字段
     }
